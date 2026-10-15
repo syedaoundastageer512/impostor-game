@@ -401,6 +401,35 @@ h3 { font-size: 1.18rem; }
   box-shadow: 0 0 45px rgba(202,255,61,.14);
 }
 
+.discussion-panel { width: min(100%, 680px); }
+.first-speaker {
+  display: grid;
+  width: min(100%, 430px);
+  margin: 22px auto;
+  padding: 20px;
+  gap: 7px;
+  border: 1px solid rgba(202,255,61,.42);
+  border-radius: 18px;
+  background: rgba(202,255,61,.08);
+  box-shadow: 0 0 36px rgba(202,255,61,.08);
+}
+.first-speaker span, .timer-label { color: var(--lime); font: 850 .72rem/1 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+.first-speaker strong { font-size: clamp(1.55rem, 6vw, 2.35rem); overflow-wrap: anywhere; }
+.discussion-rules { max-width: 520px; margin: 0 auto 24px; padding-left: 25px; color: var(--muted); font: .92rem/1.55 ui-sans-serif, system-ui, sans-serif; text-align: left; }
+.discussion-rules li + li { margin-top: 7px; }
+.discussion-timer { width: min(100%, 430px); margin: 0 auto 14px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.035); }
+.timer-label { margin: 0 0 12px; }
+.timer-display { display: block; color: var(--text); font: 900 clamp(3rem, 14vw, 5rem)/1 ui-monospace, monospace; letter-spacing: -.07em; }
+.timer-controls { display: flex; margin-top: 19px; justify-content: center; }
+.timer-controls .button { min-width: 150px; }
+.discussion-timer.is-finished { border-color: rgba(255,117,133,.6); background: rgba(255,117,133,.08); }
+.discussion-timer.is-finished .timer-display { color: #ff9ca8; }
+.timer-status { min-height: 24px; margin: 8px auto 16px; color: var(--muted); font: .86rem/1.45 ui-sans-serif, system-ui, sans-serif; }
+.discussion-panel > .button-primary { margin-top: 8px; }
+.voting-placeholder { margin-top: 18px; padding: 18px; border: 1px solid rgba(189,131,255,.35); border-radius: 14px; background: rgba(157,85,255,.09); }
+.voting-placeholder strong { color: var(--purple-bright); }
+.voting-placeholder p { margin: 7px 0 0; color: var(--muted); font: .88rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+
 .content-section { padding-block: clamp(34px, 6vw, 68px); }
 .section-heading { max-width: 680px; margin-bottom: 32px; }
 .section-heading h2 { margin-bottom: 13px; }

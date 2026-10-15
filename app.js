@@ -12,7 +12,7 @@ const APP_STATES = Object.freeze({
   SETUP: "setup",
   HANDOFF: "handoff",
   REVEAL: "reveal",
-  COMPLETE: "complete",
+  DISCUSSION: "discussion",
   INTERRUPTED: "interrupted"
 });
 
@@ -70,14 +70,26 @@ const elements = {
   hideRole: document.querySelector("#hide-role"),
   passPhone: document.querySelector("#pass-phone"),
   revealStatus: document.querySelector("#reveal-status"),
-  completePanel: document.querySelector("#roles-complete-panel"),
-  newSetup: document.querySelector("#roles-new-setup")
+  discussionPanel: document.querySelector("#discussion-panel"),
+  firstSpeakerName: document.querySelector("#first-speaker-name"),
+  discussionTimer: document.querySelector("#discussion-timer"),
+  timerDisplay: document.querySelector("#timer-display"),
+  timerStart: document.querySelector("#timer-start"),
+  timerPause: document.querySelector("#timer-pause"),
+  timerResume: document.querySelector("#timer-resume"),
+  timerStatus: document.querySelector("#timer-status"),
+  untimedNote: document.querySelector("#untimed-note"),
+  startVoting: document.querySelector("#start-voting"),
+  votingPlaceholder: document.querySelector("#voting-placeholder")
 };
 
 let settings = loadSettings();
 let appState = APP_STATES.SETUP;
 let round = null;
 let holdActive = false;
+let timerInterval = null;
+let timerEndTime = null;
+let timerRemainingMs = 0;
 
 function safeStorageRead(key, storage = localStorage) {
   try { return storage.getItem(key); } catch { return null; }
@@ -298,7 +310,7 @@ function hideAllGamePanels() {
   elements.interruptedPanel.hidden = true;
   elements.handoffPanel.hidden = true;
   elements.revealPanel.hidden = true;
-  elements.completePanel.hidden = true;
+  elements.discussionPanel.hidden = true;
 }
 
 function createRound() {
@@ -310,6 +322,7 @@ function createRound() {
     imposterIndex: secureRandomIndex(settings.players.length),
     categoryId,
     secretWord: wordPool[secureRandomIndex(wordPool.length)],
+    firstSpeakerIndex: secureRandomIndex(settings.players.length),
     playerIndex: 0,
     viewed: false
   };
@@ -319,6 +332,7 @@ function showSetup() {
   appState = APP_STATES.SETUP;
   round = null;
   holdActive = false;
+  stopTimerInterval();
   hideAllGamePanels();
   elements.form.hidden = false;
   safeStorageRemove(ROUND_MARKER_KEY, sessionStorage);
@@ -401,12 +415,47 @@ function hideRole() {
   elements.passPhone.focus();
 }
 
-function showComplete() {
-  appState = APP_STATES.COMPLETE;
+function formatTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  return `${String(Math.floor(totalSeconds / 60)).padStart(2, "0")}:${String(totalSeconds % 60).padStart(2, "0")}`;
+}
+
+function stopTimerInterval() {
+  if (timerInterval !== null) clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function updateTimer() {
+  if (timerEndTime !== null) timerRemainingMs = Math.max(0, timerEndTime - Date.now());
+  elements.timerDisplay.textContent = formatTime(timerRemainingMs);
+  if (timerRemainingMs > 0) return;
+  stopTimerInterval();
+  timerEndTime = null;
+  elements.timerPause.hidden = true;
+  elements.timerResume.hidden = true;
+  elements.timerStatus.textContent = "Time’s up! Finish your thought, then start voting when everyone is ready.";
+  elements.discussionTimer.classList.add("is-finished");
+}
+
+function showDiscussion() {
+  appState = APP_STATES.DISCUSSION;
   holdActive = false;
   hideAllGamePanels();
-  elements.completePanel.hidden = false;
-  elements.completePanel.focus();
+  elements.discussionPanel.hidden = false;
+  elements.firstSpeakerName.textContent = settings.players[round.firstSpeakerIndex];
+  timerRemainingMs = settings.timerDuration * 60 * 1000;
+  timerEndTime = null;
+  elements.timerDisplay.textContent = formatTime(timerRemainingMs);
+  elements.discussionTimer.hidden = !settings.timerEnabled;
+  elements.untimedNote.hidden = settings.timerEnabled;
+  elements.timerStart.hidden = false;
+  elements.timerPause.hidden = true;
+  elements.timerResume.hidden = true;
+  elements.timerStatus.textContent = settings.timerEnabled ? `Timer ready for ${settings.timerDuration} minute${settings.timerDuration === 1 ? "" : "s"}.` : "";
+  elements.discussionTimer.classList.remove("is-finished");
+  elements.startVoting.hidden = false;
+  elements.votingPlaceholder.hidden = true;
+  elements.discussionPanel.focus();
 }
 
 elements.addPlayer.addEventListener("click", () => {
@@ -469,8 +518,46 @@ elements.clearSettings.addEventListener("click", () => {
 });
 
 elements.restartInterrupted.addEventListener("click", showSetup);
-elements.newSetup.addEventListener("click", showSetup);
 elements.playerReady.addEventListener("click", showReveal);
+
+elements.timerStart.addEventListener("click", () => {
+  if (appState !== APP_STATES.DISCUSSION) return;
+  timerEndTime = Date.now() + timerRemainingMs;
+  elements.timerStart.hidden = true;
+  elements.timerPause.hidden = false;
+  elements.timerStatus.textContent = "Timer running.";
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 250);
+});
+
+elements.timerPause.addEventListener("click", () => {
+  if (timerEndTime === null) return;
+  timerRemainingMs = Math.max(0, timerEndTime - Date.now());
+  timerEndTime = null;
+  stopTimerInterval();
+  updateTimer();
+  if (timerRemainingMs <= 0) return;
+  elements.timerPause.hidden = true;
+  elements.timerResume.hidden = false;
+  elements.timerStatus.textContent = "Timer paused.";
+});
+
+elements.timerResume.addEventListener("click", () => {
+  if (timerRemainingMs <= 0) return;
+  timerEndTime = Date.now() + timerRemainingMs;
+  elements.timerResume.hidden = true;
+  elements.timerPause.hidden = false;
+  elements.timerStatus.textContent = "Timer resumed.";
+  timerInterval = setInterval(updateTimer, 250);
+});
+
+elements.startVoting.addEventListener("click", () => {
+  stopTimerInterval();
+  timerEndTime = null;
+  elements.startVoting.hidden = true;
+  elements.votingPlaceholder.hidden = false;
+  elements.votingPlaceholder.focus();
+});
 
 elements.holdReveal.addEventListener("contextmenu", event => event.preventDefault());
 elements.holdReveal.addEventListener("pointerdown", event => {
@@ -524,7 +611,7 @@ elements.hideRole.addEventListener("click", hideRole);
 elements.passPhone.addEventListener("click", () => {
   if (!round?.viewed || !elements.roleCardContent.hidden) return;
   if (round.playerIndex >= settings.players.length - 1) {
-    showComplete();
+    showDiscussion();
     return;
   }
   round.playerIndex += 1;

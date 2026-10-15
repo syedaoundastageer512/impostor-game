@@ -91,13 +91,34 @@
           <p class="privacy-note" id="reveal-status" role="status" aria-live="polite"></p>
         </div>
 
-        <div id="roles-complete-panel" class="role-flow-panel" hidden tabindex="-1">
-          <div class="complete-symbol" aria-hidden="true">✓</div>
-          <p class="eyebrow">Briefing complete</p>
-          <h2>All Roles Revealed</h2>
-          <p>Everyone has privately checked their role. Keep the secret safe—the discussion phase is coming next.</p>
-          <p class="phase-note">Discussion, voting, and winner logic are not included yet.</p>
-          <button class="button button-secondary" id="roles-new-setup" type="button">Return to setup</button>
+        <div id="discussion-panel" class="role-flow-panel discussion-panel" hidden tabindex="-1">
+          <p class="eyebrow">All roles revealed</p>
+          <h2>Time to Discuss</h2>
+          <div class="first-speaker">
+            <span>First speaker</span>
+            <strong id="first-speaker-name"></strong>
+          </div>
+          <ol class="discussion-rules">
+            <li>Give one clue each without saying the secret word.</li>
+            <li>Listen closely, then discuss who might be the imposter.</li>
+          </ol>
+
+          <div id="discussion-timer" class="discussion-timer" hidden>
+            <p class="timer-label">Discussion time</p>
+            <output id="timer-display" class="timer-display" aria-live="off">03:00</output>
+            <div class="timer-controls">
+              <button class="button button-secondary" id="timer-start" type="button">Start Timer</button>
+              <button class="button button-secondary" id="timer-pause" type="button" hidden>Pause</button>
+              <button class="button button-secondary" id="timer-resume" type="button" hidden>Resume</button>
+            </div>
+          </div>
+          <p id="timer-status" class="timer-status" role="status" aria-live="polite"></p>
+          <p id="untimed-note" class="phase-note">No timer is set. Discuss for as long as your group needs.</p>
+          <button class="button button-primary" id="start-voting" type="button">Start Voting</button>
+          <div id="voting-placeholder" class="voting-placeholder" role="status" tabindex="-1" hidden>
+            <strong>Voting is coming next</strong>
+            <p>The voting phase is not implemented yet. Your discussion round is complete.</p>
+          </div>
         </div>
 
         <form id="setup-form" novalidate>
