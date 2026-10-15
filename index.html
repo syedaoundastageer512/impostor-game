@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Play a free imposter game with 3–12 friends. Add names, choose categories, and set up a pass-the-phone word game—no download or account needed.">
+    <meta name="robots" content="index,follow">
+    <meta name="theme-color" content="#090b18">
+    <title>Imposter Game – Play the Free Word Game Online</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="words.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#game-setup">Skip to game setup</a>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Imposter Game home">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span>Imposter Game</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#how-to-play">How to play</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">One phone. One secret. One suspicious friend.</p>
+          <h1 id="page-title">Play the Imposter Game Online</h1>
+          <p class="hero-intro">Set up a fast, free word game for 3–12 people. Add your crew, choose your categories, then pass the phone and find the imposter.</p>
+          <ul class="trust-list" aria-label="Game benefits">
+            <li>No account</li>
+            <li>No download</li>
+            <li>Free to play</li>
+          </ul>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <span class="orbit orbit-one"></span>
+          <span class="orbit orbit-two"></span>
+          <span class="mystery-card card-back"><i>?</i></span>
+          <span class="mystery-card card-word"><small>YOUR WORD</small><strong>CLASSIFIED</strong></span>
+          <span class="signal signal-one">WHO'S BLUFFING?</span>
+          <span class="signal signal-two">● LIVE ROUND</span>
+        </div>
+      </section>
+
+      <section class="game-shell" id="game-setup" aria-labelledby="setup-title">
+        <div id="interrupted-panel" class="status-panel" hidden tabindex="-1">
+          <p class="eyebrow">Round interrupted</p>
+          <h2>Return to a safe starting point</h2>
+          <p>This browser was refreshed after a round was prepared. No secret roles or votes were saved. Restart with your saved setup to keep the phone neutral.</p>
+          <button class="button button-primary" id="restart-interrupted" type="button">Restart from setup</button>
+        </div>
+
+        <div id="handoff-panel" class="role-flow-panel" hidden tabindex="-1">
+          <p class="role-progress" id="handoff-progress"></p>
+          <div class="handoff-symbol" aria-hidden="true"><span></span></div>
+          <p class="eyebrow">Pass the phone</p>
+          <h2 id="handoff-title"></h2>
+          <p>Make sure no one else can see the screen before continuing.</p>
+          <button class="button button-primary" id="player-ready" type="button">I’m Ready</button>
+        </div>
+
+        <div id="reveal-panel" class="role-flow-panel" hidden tabindex="-1">
+          <p class="role-progress" id="reveal-progress"></p>
+          <p class="eyebrow">Private role</p>
+          <h2 id="reveal-title"></h2>
+          <p class="reveal-instruction" id="reveal-instruction">Press and hold the card to reveal your role. Release to hide it.</p>
+
+          <div class="private-role-card" id="role-card">
+            <div class="role-card-cover" id="role-card-cover" aria-hidden="true">
+              <span>?</span>
+              <strong>Hold to reveal</strong>
+            </div>
+            <div class="role-card-content" id="role-card-content" tabindex="-1" hidden>
+              <p id="role-label"></p>
+              <strong id="role-value"></strong>
+              <small id="role-note"></small>
+            </div>
+          </div>
+
+          <div class="reveal-controls">
+            <button class="button hold-button" id="hold-reveal" type="button">Press and hold to reveal</button>
+            <button class="text-button" id="tap-reveal" type="button">Use tap reveal instead</button>
+            <button class="button button-secondary" id="hide-role" type="button" hidden>Hide Role</button>
+            <button class="button button-primary" id="pass-phone" type="button" disabled>Hide your role first</button>
+          </div>
+          <p class="privacy-note" id="reveal-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="roles-complete-panel" class="role-flow-panel" hidden tabindex="-1">
+          <div class="complete-symbol" aria-hidden="true">✓</div>
+          <p class="eyebrow">Briefing complete</p>
+          <h2>All Roles Revealed</h2>
+          <p>Everyone has privately checked their role. Keep the secret safe—the discussion phase is coming next.</p>
+          <p class="phase-note">Discussion, voting, and winner logic are not included yet.</p>
+          <button class="button button-secondary" id="roles-new-setup" type="button">Return to setup</button>
+        </div>
+
+        <form id="setup-form" novalidate>
+          <div class="form-heading">
+            <div>
+              <p class="step-label">Game setup</p>
+              <h2 id="setup-title">Build your crew</h2>
+              <p>Names and settings stay in this browser.</p>
+            </div>
+            <span class="player-count" id="player-count" aria-live="polite">3 / 12</span>
+          </div>
+
+          <div id="form-error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
+            <strong>Check your setup</strong>
+            <ul id="error-summary-list"></ul>
+          </div>
+
+          <fieldset class="setup-section players-section">
+            <legend><span>1</span> Add players</legend>
+            <p class="field-hint" id="players-hint">Use 3–12 unique names. Letters, numbers, spaces, apostrophes, and hyphens are accepted.</p>
+            <div class="player-list" id="player-list" aria-describedby="players-hint"></div>
+            <button class="button button-add" id="add-player" type="button">
+              <span aria-hidden="true">＋</span> Add player
+            </button>
+          </fieldset>
+
+          <fieldset class="setup-section">
+            <legend><span>2</span> Pick categories</legend>
+            <p class="field-hint" id="categories-hint">Choose one or more topics for the secret word.</p>
+            <div id="category-error" class="field-error" role="alert" hidden></div>
+            <div class="category-grid" id="category-list" aria-describedby="categories-hint category-error"></div>
+          </fieldset>
+
+          <fieldset class="setup-section timer-section">
+            <legend><span>3</span> Set a timer <small>Optional</small></legend>
+            <label class="toggle-row" for="timer-enabled">
+              <span>
+                <strong>Discussion timer</strong>
+                <small>Keep clues and debate moving.</small>
+              </span>
+              <span class="switch">
+                <input id="timer-enabled" type="checkbox" role="switch" aria-controls="timer-options">
+                <span aria-hidden="true"></span>
+              </span>
+            </label>
+            <div id="timer-options" class="timer-options" hidden>
+              <label for="timer-duration">Round length</label>
+              <select id="timer-duration" name="timerDuration">
+                <option value="1">1 minute</option>
+                <option value="2">2 minutes</option>
+                <option value="3" selected>3 minutes</option>
+                <option value="5">5 minutes</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Start Game <span aria-hidden="true">→</span></button>
+            <button class="text-button" id="clear-settings" type="button">Clear saved settings</button>
+          </div>
+          <p class="privacy-note"><span aria-hidden="true">◇</span> Your setup is saved locally. Nothing is sent to a server.</p>
+        </form>
+
+        <noscript>
+          <p class="noscript-note">JavaScript is required to set up the game. The instructions and FAQs below are still available.</p>
+        </noscript>
+      </section>
+
+      <section class="content-section" id="how-to-play" aria-labelledby="how-title">
+        <div class="section-heading">
+          <p class="eyebrow">The quick briefing</p>
+          <h2 id="how-title">How to Play the Imposter Game</h2>
+          <p>Gather around one device and follow four simple steps.</p>
+        </div>
+        <ol class="steps">
+          <li><span class="step-number">01</span><h3>Set up your group</h3><p>Add 3–12 player names, choose one or more word categories, and optionally set a timer.</p></li>
+          <li><span class="step-number">02</span><h3>Pass the phone</h3><p>Each player privately checks their role. Most see the same word; one player is the imposter.</p></li>
+          <li><span class="step-number">03</span><h3>Give clues</h3><p>Take turns giving careful clues without saying the secret word. The imposter must improvise.</p></li>
+          <li><span class="step-number">04</span><h3>Discuss and vote</h3><p>Compare clues and vote for the suspicious player. Catch the imposter before they fool the group.</p></li>
+        </ol>
+      </section>
+
+      <section class="about-section" aria-labelledby="about-title">
+        <div>
+          <p class="eyebrow">No prep required</p>
+          <h2 id="about-title">A social deduction game made for the room</h2>
+        </div>
+        <p>Imposter Game is a pass-the-phone party word game for friends, families, classmates, and coworkers. Everyone talks face to face, so the browser handles setup while your group creates the suspense. Start with familiar categories, keep clues short, and listen for the answer that sounds just a little too vague.</p>
+      </section>
+
+      <section class="content-section faq-section" id="faq" aria-labelledby="faq-title">
+        <div class="section-heading">
+          <p class="eyebrow">Case notes</p>
+          <h2 id="faq-title">Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-list">
+          <details><summary>What is the imposter game?</summary><p>It is a social deduction word game. Most players know the same secret word, while one imposter tries to blend in without knowing it.</p></details>
+          <details><summary>How many players do we need?</summary><p>This version supports 3–12 players sharing one phone, tablet, or computer.</p></details>
+          <details><summary>Is it free, and do we need an account?</summary><p>It is free to play in the browser. There is no account, download, or installation.</p></details>
+          <details><summary>What gets saved?</summary><p>Player names, selected categories, and timer preferences are stored only in this browser. Secret roles and votes are never saved by the setup flow.</p></details>
+          <details><summary>What happens if the page refreshes?</summary><p>If a prepared round is interrupted, the site returns to a neutral restart screen. Your setup preferences remain available, but no secret role or vote state is restored.</p></details>
+          <details><summary>Can friends play remotely?</summary><p>Not in this local pass-the-phone version. Everyone should be together and share one device.</p></details>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><span></span></span><span>Imposter Game</span></a>
+      <p>Free browser play. No account. Setup stays on your device.</p>
+    </footer>
+  </body>
+</html>
