@@ -2,7 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="Play a free imposter game with 3–12 friends. Add names, pass the phone, reveal the secret word, discuss, and vote—no download or account needed.">
     <meta name="robots" content="index,follow">
     <meta name="theme-color" content="#090b18">
@@ -48,6 +48,7 @@
       </section>
 
       <section class="game-shell" id="game-setup" aria-labelledby="setup-title">
+        <p id="game-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
         <div id="interrupted-panel" class="status-panel" hidden tabindex="-1">
           <p class="eyebrow">Round interrupted</p>
           <h2>Return to a safe starting point</h2>
@@ -163,11 +164,11 @@
           </div>
         </div>
 
-        <dialog id="restart-dialog" class="confirmation-dialog" aria-labelledby="restart-dialog-title">
+        <dialog id="restart-dialog" class="confirmation-dialog" aria-labelledby="restart-dialog-title" aria-describedby="restart-dialog-description">
           <form method="dialog">
             <p class="eyebrow">Restart game</p>
             <h2 id="restart-dialog-title">Return to setup?</h2>
-            <p>This will leave the completed round and return to your saved setup.</p>
+            <p id="restart-dialog-description">This will leave the completed round and return to your saved setup.</p>
             <div class="dialog-actions">
               <button class="button button-secondary" value="cancel">Cancel</button>
               <button class="button button-primary" id="confirm-restart" value="confirm">Restart</button>

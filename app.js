@@ -52,6 +52,7 @@ const elements = {
   clearSettings: document.querySelector("#clear-settings"),
   errorSummary: document.querySelector("#form-error-summary"),
   errorSummaryList: document.querySelector("#error-summary-list"),
+  gameAnnouncer: document.querySelector("#game-announcer"),
   interruptedPanel: document.querySelector("#interrupted-panel"),
   restartInterrupted: document.querySelector("#restart-interrupted"),
   handoffPanel: document.querySelector("#handoff-panel"),
@@ -224,6 +225,7 @@ function makeCategoryOption(category) {
   input.value = category.id;
   input.name = "category";
   input.checked = settings.categories.includes(category.id);
+  input.setAttribute("aria-describedby", "categories-hint category-error");
   const label = document.createElement("label");
   label.htmlFor = input.id;
   const icon = document.createElement("span");
@@ -272,6 +274,7 @@ function clearErrors() {
   elements.errorSummaryList.replaceChildren();
   elements.categoryError.hidden = true;
   elements.categoryError.textContent = "";
+  elements.categoryList.querySelectorAll("input").forEach(input => input.removeAttribute("aria-invalid"));
   elements.playerList.querySelectorAll("input").forEach(input => input.removeAttribute("aria-invalid"));
   elements.playerList.querySelectorAll(".field-error").forEach(error => { error.hidden = true; error.textContent = ""; });
 }
@@ -306,6 +309,7 @@ function validateSetup() {
     hasErrors = true;
     elements.categoryError.textContent = "Choose at least one category.";
     elements.categoryError.hidden = false;
+    elements.categoryList.querySelectorAll("input").forEach(input => input.setAttribute("aria-invalid", "true"));
     addSummaryLink("Choose at least one category.", "category-all");
   }
 
@@ -329,7 +333,10 @@ function handleCategoryChange(event) {
     document.querySelector("#category-all").checked = false;
   }
   settings.categories = inputs.filter(input => input.checked).map(input => input.value);
-  if (settings.categories.length) elements.categoryError.hidden = true;
+  if (settings.categories.length) {
+    elements.categoryError.hidden = true;
+    elements.categoryList.querySelectorAll("input").forEach(input => input.removeAttribute("aria-invalid"));
+  }
   saveSettings();
 }
 
@@ -342,6 +349,11 @@ function hideAllGamePanels() {
   elements.voteHandoffPanel.hidden = true;
   elements.votePanel.hidden = true;
   elements.resultsPanel.hidden = true;
+}
+
+function announceGameState(message) {
+  elements.gameAnnouncer.textContent = "";
+  requestAnimationFrame(() => { elements.gameAnnouncer.textContent = message; });
 }
 
 function createRound(previousRound = null) {
@@ -383,6 +395,7 @@ function showSetup() {
   elements.form.hidden = false;
   safeStorageRemove(ROUND_MARKER_KEY, sessionStorage);
   elements.playerList.querySelector("input")?.focus();
+  announceGameState("Game setup ready.");
 }
 
 function showInterrupted() {
@@ -391,6 +404,7 @@ function showInterrupted() {
   hideAllGamePanels();
   elements.interruptedPanel.hidden = false;
   elements.interruptedPanel.focus();
+  announceGameState("The round was interrupted. Restart from setup to continue safely.");
 }
 
 function showHandoff() {
@@ -402,6 +416,7 @@ function showHandoff() {
   elements.handoffProgress.textContent = `Player ${current} of ${settings.players.length}`;
   elements.handoffTitle.textContent = `${settings.players[round.playerIndex]}, take the phone`;
   elements.handoffPanel.focus();
+  announceGameState(`Private role handoff. Player ${current} of ${settings.players.length}.`);
 }
 
 function resetRevealView() {
@@ -501,6 +516,7 @@ function showDiscussion() {
   elements.discussionTimer.classList.remove("is-finished");
   elements.startVoting.hidden = false;
   elements.discussionPanel.focus();
+  announceGameState("All private roles are ready. Discussion can begin.");
 }
 
 function showVoteHandoff() {
@@ -512,6 +528,7 @@ function showVoteHandoff() {
   elements.voteHandoffProgress.textContent = `Voter ${current} of ${settings.players.length}`;
   elements.voteHandoffTitle.textContent = `${settings.players[round.voterIndex]}, take the phone`;
   elements.voteHandoffPanel.focus();
+  announceGameState(`Private voting handoff. Voter ${current} of ${settings.players.length}.`);
 }
 
 function makeVoteOption(name, index) {
@@ -537,6 +554,7 @@ function showVoteSelection() {
   elements.voteStatus.textContent = "";
   elements.votePanel.focus();
   elements.voteOptions.querySelector("button")?.focus();
+  announceGameState("Private vote selection ready.");
 }
 
 function selectVote(index) {
@@ -605,6 +623,7 @@ function showResults() {
   elements.resultVoteTotals.replaceChildren(...settings.players.map((name, index) => makeVoteTotal(name, totals[index], index === round.imposterIndex)));
   safeStorageRemove(ROUND_MARKER_KEY, sessionStorage);
   elements.resultsPanel.focus();
+  announceGameState(`Round complete. ${crewWins ? "Crew wins" : "Imposter wins"}. Results are displayed.`);
 }
 
 function confirmVote() {
@@ -749,10 +768,13 @@ elements.newSetup.addEventListener("click", () => {
 elements.restartRound.addEventListener("click", () => {
   if (appState !== APP_STATES.RESULT || elements.restartDialog.open) return;
   elements.restartDialog.showModal();
+  elements.confirmRestart.focus();
 });
 
-elements.confirmRestart.addEventListener("click", () => {
+elements.confirmRestart.addEventListener("click", event => {
   if (appState !== APP_STATES.RESULT) return;
+  event.preventDefault();
+  elements.restartDialog.close("confirm");
   showSetup();
 });
 
