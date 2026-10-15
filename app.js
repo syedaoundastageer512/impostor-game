@@ -15,7 +15,7 @@ const APP_STATES = Object.freeze({
   DISCUSSION: "discussion",
   VOTE_HANDOFF: "vote-handoff",
   VOTE_SELECT: "vote-select",
-  VOTING_COMPLETE: "voting-complete",
+  RESULT: "result",
   INTERRUPTED: "interrupted"
 });
 
@@ -96,7 +96,19 @@ const elements = {
   changeVote: document.querySelector("#change-vote"),
   confirmVote: document.querySelector("#confirm-vote"),
   voteStatus: document.querySelector("#vote-status"),
-  votingCompletePanel: document.querySelector("#voting-complete-panel")
+  resultsPanel: document.querySelector("#results-panel"),
+  resultSymbol: document.querySelector("#result-symbol"),
+  resultTitle: document.querySelector("#result-title"),
+  resultExplanation: document.querySelector("#result-explanation"),
+  resultImposter: document.querySelector("#result-imposter"),
+  resultWord: document.querySelector("#result-word"),
+  resultCategory: document.querySelector("#result-category"),
+  resultVoteTotals: document.querySelector("#result-vote-totals"),
+  playAgain: document.querySelector("#play-again"),
+  newSetup: document.querySelector("#new-setup"),
+  restartRound: document.querySelector("#restart-round"),
+  restartDialog: document.querySelector("#restart-dialog"),
+  confirmRestart: document.querySelector("#confirm-restart")
 };
 
 let settings = loadSettings();
@@ -329,18 +341,24 @@ function hideAllGamePanels() {
   elements.discussionPanel.hidden = true;
   elements.voteHandoffPanel.hidden = true;
   elements.votePanel.hidden = true;
-  elements.votingCompletePanel.hidden = true;
+  elements.resultsPanel.hidden = true;
 }
 
-function createRound() {
+function createRound(previousRound = null) {
   const playableCategories = categories.filter(category => category.id !== "all").map(category => category.id);
   const eligibleCategories = settings.categories.includes("all") ? playableCategories : settings.categories;
-  const categoryId = eligibleCategories[secureRandomIndex(eligibleCategories.length)];
-  const wordPool = WORDS[categoryId];
+  const eligibleWords = eligibleCategories.flatMap(categoryId => WORDS[categoryId].map(word => ({ categoryId, word })));
+  const differentWords = previousRound ? eligibleWords.filter(choice => choice.word !== previousRound.secretWord) : eligibleWords;
+  const wordChoices = differentWords.length ? differentWords : eligibleWords;
+  const wordChoice = wordChoices[secureRandomIndex(wordChoices.length)];
+  const imposterChoices = settings.players.map((_, index) => index);
+  const eligibleImposters = previousRound && imposterChoices.length > 1
+    ? imposterChoices.filter(index => index !== previousRound.imposterIndex)
+    : imposterChoices;
   round = {
-    imposterIndex: secureRandomIndex(settings.players.length),
-    categoryId,
-    secretWord: wordPool[secureRandomIndex(wordPool.length)],
+    imposterIndex: eligibleImposters[secureRandomIndex(eligibleImposters.length)],
+    categoryId: wordChoice.categoryId,
+    secretWord: wordChoice.word,
     firstSpeakerIndex: secureRandomIndex(settings.players.length),
     playerIndex: 0,
     viewed: false,
@@ -348,6 +366,12 @@ function createRound() {
     voterIndex: 0,
     selectedVoteIndex: null
   };
+}
+
+function startRound(previousRound = null) {
+  createRound(previousRound);
+  safeStorageWrite(ROUND_MARKER_KEY, "role-reveal", sessionStorage);
+  showHandoff();
 }
 
 function showSetup() {
@@ -536,6 +560,53 @@ function changeVote() {
   elements.voteOptions.querySelector(`[data-vote-index="${previousChoice}"]`)?.focus();
 }
 
+function makeVoteTotal(name, total, isImposter) {
+  const item = document.createElement("li");
+  const player = document.createElement("span");
+  player.textContent = name;
+  if (isImposter) {
+    const badge = document.createElement("small");
+    badge.textContent = "Imposter";
+    player.append(" ", badge);
+  }
+  const count = document.createElement("strong");
+  count.textContent = `${total} vote${total === 1 ? "" : "s"}`;
+  item.append(player, count);
+  return item;
+}
+
+function showResults() {
+  if (appState !== APP_STATES.VOTE_SELECT || round.votes.length !== settings.players.length) return;
+  appState = APP_STATES.RESULT;
+  const totals = Array(settings.players.length).fill(0);
+  round.votes.forEach(voteIndex => { totals[voteIndex] += 1; });
+  const highestTotal = Math.max(...totals);
+  const leaders = totals.map((total, index) => ({ total, index })).filter(player => player.total === highestTotal);
+  const crewWins = leaders.length === 1 && leaders[0].index === round.imposterIndex;
+  const categoryName = categories.find(category => category.id === round.categoryId)?.name || round.categoryId;
+
+  hideAllGamePanels();
+  elements.resultsPanel.hidden = false;
+  elements.resultsPanel.classList.toggle("crew-wins", crewWins);
+  elements.resultsPanel.classList.toggle("imposter-wins", !crewWins);
+  elements.resultSymbol.textContent = crewWins ? "✓" : "!";
+  elements.resultTitle.textContent = crewWins ? "Crew Wins" : "Imposter Wins";
+  if (crewWins) {
+    elements.resultExplanation.textContent = `${settings.players[round.imposterIndex]} was the only player with the most votes, so the crew found the imposter.`;
+  } else if (leaders.length > 1) {
+    const tiedNames = leaders.map(player => settings.players[player.index]).join(", ");
+    elements.resultExplanation.textContent = `${tiedNames} tied with ${highestTotal} vote${highestTotal === 1 ? "" : "s"} each. A tie means no player is eliminated, so the imposter wins.`;
+  } else {
+    elements.resultExplanation.textContent = `${settings.players[leaders[0].index]} received the most votes but was innocent, so the imposter escaped.`;
+  }
+  elements.resultImposter.textContent = settings.players[round.imposterIndex];
+  elements.resultWord.textContent = round.secretWord;
+  elements.resultCategory.textContent = categoryName;
+  elements.resultVoteTotals.replaceChildren(...settings.players.map((name, index) => makeVoteTotal(name, totals[index], index === round.imposterIndex)));
+  safeStorageRemove(ROUND_MARKER_KEY, sessionStorage);
+  elements.resultsPanel.focus();
+}
+
 function confirmVote() {
   if (appState !== APP_STATES.VOTE_SELECT || round.selectedVoteIndex === null) return;
   if (round.votes.length !== round.voterIndex) return;
@@ -545,10 +616,7 @@ function confirmVote() {
   elements.voteConfirmation.hidden = true;
   elements.voteOptions.replaceChildren();
   if (round.voterIndex >= settings.players.length - 1) {
-    appState = APP_STATES.VOTING_COMPLETE;
-    hideAllGamePanels();
-    elements.votingCompletePanel.hidden = false;
-    elements.votingCompletePanel.focus();
+    showResults();
     return;
   }
   round.voterIndex += 1;
@@ -597,9 +665,7 @@ elements.form.addEventListener("submit", event => {
   event.preventDefault();
   if (!validateSetup()) return;
   saveSettings();
-  createRound();
-  safeStorageWrite(ROUND_MARKER_KEY, "role-reveal", sessionStorage);
-  showHandoff();
+  startRound();
 });
 
 elements.clearSettings.addEventListener("click", () => {
@@ -666,6 +732,29 @@ elements.voteOptions.addEventListener("click", event => {
 });
 elements.changeVote.addEventListener("click", changeVote);
 elements.confirmVote.addEventListener("click", confirmVote);
+
+elements.playAgain.addEventListener("click", () => {
+  if (appState !== APP_STATES.RESULT) return;
+  elements.playAgain.disabled = true;
+  const previousRound = round;
+  startRound(previousRound);
+  elements.playAgain.disabled = false;
+});
+
+elements.newSetup.addEventListener("click", () => {
+  if (appState !== APP_STATES.RESULT) return;
+  showSetup();
+});
+
+elements.restartRound.addEventListener("click", () => {
+  if (appState !== APP_STATES.RESULT || elements.restartDialog.open) return;
+  elements.restartDialog.showModal();
+});
+
+elements.confirmRestart.addEventListener("click", () => {
+  if (appState !== APP_STATES.RESULT) return;
+  showSetup();
+});
 
 elements.holdReveal.addEventListener("contextmenu", event => event.preventDefault());
 elements.holdReveal.addEventListener("pointerdown", event => {

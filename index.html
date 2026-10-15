@@ -142,12 +142,38 @@
           <p id="vote-status" class="privacy-note" role="status" aria-live="polite"></p>
         </div>
 
-        <div id="voting-complete-panel" class="role-flow-panel" hidden tabindex="-1">
-          <p class="eyebrow">All votes submitted</p>
-          <div class="complete-symbol" aria-hidden="true">✓</div>
-          <h2>Voting Complete</h2>
-          <p>Every player’s vote is safely recorded. Results will be revealed in the next phase.</p>
+        <div id="results-panel" class="role-flow-panel results-panel" hidden tabindex="-1">
+          <p class="eyebrow">Round complete</p>
+          <div class="complete-symbol" id="result-symbol" aria-hidden="true">✓</div>
+          <h2 id="result-title"></h2>
+          <p id="result-explanation" class="result-explanation"></p>
+          <dl class="result-reveal">
+            <div><dt>The imposter</dt><dd id="result-imposter"></dd></div>
+            <div><dt>Secret word</dt><dd id="result-word"></dd></div>
+            <div><dt>Category</dt><dd id="result-category"></dd></div>
+          </dl>
+          <div class="vote-totals">
+            <h3>Vote totals</h3>
+            <ul id="result-vote-totals"></ul>
+          </div>
+          <div class="result-actions">
+            <button class="button button-primary" id="play-again" type="button">Play Again</button>
+            <button class="button button-secondary" id="new-setup" type="button">New Setup</button>
+            <button class="text-button" id="restart-round" type="button">Restart</button>
+          </div>
         </div>
+
+        <dialog id="restart-dialog" class="confirmation-dialog" aria-labelledby="restart-dialog-title">
+          <form method="dialog">
+            <p class="eyebrow">Restart game</p>
+            <h2 id="restart-dialog-title">Return to setup?</h2>
+            <p>This will leave the completed round and return to your saved setup.</p>
+            <div class="dialog-actions">
+              <button class="button button-secondary" value="cancel">Cancel</button>
+              <button class="button button-primary" id="confirm-restart" value="confirm">Restart</button>
+            </div>
+          </form>
+        </dialog>
 
         <form id="setup-form" novalidate>
           <div class="form-heading">
