@@ -502,6 +502,7 @@ function updateTimer() {
 function showDiscussion() {
   appState = APP_STATES.DISCUSSION;
   holdActive = false;
+  stopTimerInterval();
   hideAllGamePanels();
   elements.discussionPanel.hidden = false;
   elements.firstSpeakerName.textContent = settings.players[round.firstSpeakerIndex];
@@ -705,7 +706,7 @@ elements.restartInterrupted.addEventListener("click", showSetup);
 elements.playerReady.addEventListener("click", showReveal);
 
 elements.timerStart.addEventListener("click", () => {
-  if (appState !== APP_STATES.DISCUSSION) return;
+  if (appState !== APP_STATES.DISCUSSION || timerEndTime !== null || timerInterval !== null) return;
   timerEndTime = Date.now() + timerRemainingMs;
   elements.timerStart.hidden = true;
   elements.timerPause.hidden = false;
@@ -727,7 +728,7 @@ elements.timerPause.addEventListener("click", () => {
 });
 
 elements.timerResume.addEventListener("click", () => {
-  if (timerRemainingMs <= 0) return;
+  if (appState !== APP_STATES.DISCUSSION || timerRemainingMs <= 0 || timerEndTime !== null || timerInterval !== null) return;
   timerEndTime = Date.now() + timerRemainingMs;
   elements.timerResume.hidden = true;
   elements.timerPause.hidden = false;
