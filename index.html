@@ -115,10 +115,38 @@
           <p id="timer-status" class="timer-status" role="status" aria-live="polite"></p>
           <p id="untimed-note" class="phase-note">No timer is set. Discuss for as long as your group needs.</p>
           <button class="button button-primary" id="start-voting" type="button">Start Voting</button>
-          <div id="voting-placeholder" class="voting-placeholder" role="status" tabindex="-1" hidden>
-            <strong>Voting is coming next</strong>
-            <p>The voting phase is not implemented yet. Your discussion round is complete.</p>
+        </div>
+
+        <div id="vote-handoff-panel" class="role-flow-panel" hidden tabindex="-1">
+          <p class="role-progress" id="vote-handoff-progress"></p>
+          <div class="handoff-symbol" aria-hidden="true"><span></span></div>
+          <p class="eyebrow">Private vote</p>
+          <h2 id="vote-handoff-title"></h2>
+          <p>Make sure no one else can see the screen. Your vote will be hidden before the phone is passed.</p>
+          <button class="button button-primary" id="voter-ready" type="button">I’m Ready to Vote</button>
+        </div>
+
+        <div id="vote-panel" class="role-flow-panel voting-panel" hidden tabindex="-1">
+          <p class="role-progress" id="vote-progress"></p>
+          <p class="eyebrow">Choose privately</p>
+          <h2 id="vote-title"></h2>
+          <p id="vote-instruction">Select the player you think is the imposter. You may vote for yourself.</p>
+          <div id="vote-options" class="vote-options" role="group" aria-label="Players you can vote for"></div>
+          <div id="vote-confirmation" class="vote-confirmation" hidden>
+            <p>Vote for <strong id="vote-choice-name"></strong>?</p>
+            <div class="vote-confirmation-actions">
+              <button class="button button-secondary" id="change-vote" type="button">Change</button>
+              <button class="button button-primary" id="confirm-vote" type="button">Confirm Vote</button>
+            </div>
           </div>
+          <p id="vote-status" class="privacy-note" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="voting-complete-panel" class="role-flow-panel" hidden tabindex="-1">
+          <p class="eyebrow">All votes submitted</p>
+          <div class="complete-symbol" aria-hidden="true">✓</div>
+          <h2>Voting Complete</h2>
+          <p>Every player’s vote is safely recorded. Results will be revealed in the next phase.</p>
         </div>
 
         <form id="setup-form" novalidate>

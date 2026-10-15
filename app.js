@@ -13,6 +13,9 @@ const APP_STATES = Object.freeze({
   HANDOFF: "handoff",
   REVEAL: "reveal",
   DISCUSSION: "discussion",
+  VOTE_HANDOFF: "vote-handoff",
+  VOTE_SELECT: "vote-select",
+  VOTING_COMPLETE: "voting-complete",
   INTERRUPTED: "interrupted"
 });
 
@@ -80,7 +83,20 @@ const elements = {
   timerStatus: document.querySelector("#timer-status"),
   untimedNote: document.querySelector("#untimed-note"),
   startVoting: document.querySelector("#start-voting"),
-  votingPlaceholder: document.querySelector("#voting-placeholder")
+  voteHandoffPanel: document.querySelector("#vote-handoff-panel"),
+  voteHandoffProgress: document.querySelector("#vote-handoff-progress"),
+  voteHandoffTitle: document.querySelector("#vote-handoff-title"),
+  voterReady: document.querySelector("#voter-ready"),
+  votePanel: document.querySelector("#vote-panel"),
+  voteProgress: document.querySelector("#vote-progress"),
+  voteTitle: document.querySelector("#vote-title"),
+  voteOptions: document.querySelector("#vote-options"),
+  voteConfirmation: document.querySelector("#vote-confirmation"),
+  voteChoiceName: document.querySelector("#vote-choice-name"),
+  changeVote: document.querySelector("#change-vote"),
+  confirmVote: document.querySelector("#confirm-vote"),
+  voteStatus: document.querySelector("#vote-status"),
+  votingCompletePanel: document.querySelector("#voting-complete-panel")
 };
 
 let settings = loadSettings();
@@ -311,6 +327,9 @@ function hideAllGamePanels() {
   elements.handoffPanel.hidden = true;
   elements.revealPanel.hidden = true;
   elements.discussionPanel.hidden = true;
+  elements.voteHandoffPanel.hidden = true;
+  elements.votePanel.hidden = true;
+  elements.votingCompletePanel.hidden = true;
 }
 
 function createRound() {
@@ -324,7 +343,10 @@ function createRound() {
     secretWord: wordPool[secureRandomIndex(wordPool.length)],
     firstSpeakerIndex: secureRandomIndex(settings.players.length),
     playerIndex: 0,
-    viewed: false
+    viewed: false,
+    votes: [],
+    voterIndex: 0,
+    selectedVoteIndex: null
   };
 }
 
@@ -454,8 +476,83 @@ function showDiscussion() {
   elements.timerStatus.textContent = settings.timerEnabled ? `Timer ready for ${settings.timerDuration} minute${settings.timerDuration === 1 ? "" : "s"}.` : "";
   elements.discussionTimer.classList.remove("is-finished");
   elements.startVoting.hidden = false;
-  elements.votingPlaceholder.hidden = true;
   elements.discussionPanel.focus();
+}
+
+function showVoteHandoff() {
+  appState = APP_STATES.VOTE_HANDOFF;
+  round.selectedVoteIndex = null;
+  hideAllGamePanels();
+  elements.voteHandoffPanel.hidden = false;
+  const current = round.voterIndex + 1;
+  elements.voteHandoffProgress.textContent = `Voter ${current} of ${settings.players.length}`;
+  elements.voteHandoffTitle.textContent = `${settings.players[round.voterIndex]}, take the phone`;
+  elements.voteHandoffPanel.focus();
+}
+
+function makeVoteOption(name, index) {
+  const button = document.createElement("button");
+  button.className = "vote-option";
+  button.type = "button";
+  button.dataset.voteIndex = String(index);
+  button.textContent = name;
+  return button;
+}
+
+function showVoteSelection() {
+  if (appState !== APP_STATES.VOTE_HANDOFF) return;
+  appState = APP_STATES.VOTE_SELECT;
+  hideAllGamePanels();
+  elements.votePanel.hidden = false;
+  const current = round.voterIndex + 1;
+  elements.voteProgress.textContent = `Voter ${current} of ${settings.players.length}`;
+  elements.voteTitle.textContent = `${settings.players[round.voterIndex]}, cast your vote`;
+  elements.voteOptions.replaceChildren(...settings.players.map(makeVoteOption));
+  elements.voteOptions.hidden = false;
+  elements.voteConfirmation.hidden = true;
+  elements.voteStatus.textContent = "";
+  elements.votePanel.focus();
+  elements.voteOptions.querySelector("button")?.focus();
+}
+
+function selectVote(index) {
+  if (appState !== APP_STATES.VOTE_SELECT || round.votes.length !== round.voterIndex) return;
+  if (!Number.isInteger(index) || index < 0 || index >= settings.players.length) return;
+  round.selectedVoteIndex = index;
+  elements.voteOptions.hidden = true;
+  elements.voteChoiceName.textContent = settings.players[index];
+  elements.voteConfirmation.hidden = false;
+  elements.voteStatus.textContent = "Review your choice before submitting.";
+  elements.confirmVote.focus();
+}
+
+function changeVote() {
+  if (appState !== APP_STATES.VOTE_SELECT || round.selectedVoteIndex === null) return;
+  const previousChoice = round.selectedVoteIndex;
+  round.selectedVoteIndex = null;
+  elements.voteConfirmation.hidden = true;
+  elements.voteOptions.hidden = false;
+  elements.voteStatus.textContent = "Vote not submitted. Choose a player.";
+  elements.voteOptions.querySelector(`[data-vote-index="${previousChoice}"]`)?.focus();
+}
+
+function confirmVote() {
+  if (appState !== APP_STATES.VOTE_SELECT || round.selectedVoteIndex === null) return;
+  if (round.votes.length !== round.voterIndex) return;
+  round.votes.push(round.selectedVoteIndex);
+  round.selectedVoteIndex = null;
+  elements.voteChoiceName.textContent = "";
+  elements.voteConfirmation.hidden = true;
+  elements.voteOptions.replaceChildren();
+  if (round.voterIndex >= settings.players.length - 1) {
+    appState = APP_STATES.VOTING_COMPLETE;
+    hideAllGamePanels();
+    elements.votingCompletePanel.hidden = false;
+    elements.votingCompletePanel.focus();
+    return;
+  }
+  round.voterIndex += 1;
+  showVoteHandoff();
 }
 
 elements.addPlayer.addEventListener("click", () => {
@@ -552,12 +649,23 @@ elements.timerResume.addEventListener("click", () => {
 });
 
 elements.startVoting.addEventListener("click", () => {
+  if (appState !== APP_STATES.DISCUSSION) return;
   stopTimerInterval();
   timerEndTime = null;
-  elements.startVoting.hidden = true;
-  elements.votingPlaceholder.hidden = false;
-  elements.votingPlaceholder.focus();
+  round.votes = [];
+  round.voterIndex = 0;
+  round.selectedVoteIndex = null;
+  showVoteHandoff();
 });
+
+elements.voterReady.addEventListener("click", showVoteSelection);
+elements.voteOptions.addEventListener("click", event => {
+  const option = event.target.closest("[data-vote-index]");
+  if (!option) return;
+  selectVote(Number(option.dataset.voteIndex));
+});
+elements.changeVote.addEventListener("click", changeVote);
+elements.confirmVote.addEventListener("click", confirmVote);
 
 elements.holdReveal.addEventListener("contextmenu", event => event.preventDefault());
 elements.holdReveal.addEventListener("pointerdown", event => {
