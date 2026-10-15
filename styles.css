@@ -114,6 +114,7 @@ nav a { position: relative; display: inline-flex; min-height: 44px; align-items:
 nav a::after { content: ""; position: absolute; right: 0; bottom: -6px; left: 0; height: 2px; border-radius: 2px; background: var(--lime); transform: scaleX(0); transition: transform .2s ease; }
 nav a:hover { color: var(--text); }
 nav a:hover::after { transform: scaleX(1); }
+nav a:focus-visible::after { transform: scaleX(1); }
 
 .hero {
   width: min(calc(100% - 32px), var(--max));
@@ -216,7 +217,8 @@ h3 { font-size: 1.18rem; }
 .button-primary:hover { background: #d7ff68; transform: translateY(-3px); box-shadow: 0 13px 34px rgba(202,255,61,.26); }
 .button-secondary { border: 1px solid rgba(189,131,255,.55); background: rgba(157,85,255,.1); color: var(--text); }
 .button-secondary:hover { background: rgba(157,85,255,.2); transform: translateY(-2px); }
-.button:active { transform: translateY(0); }
+.button:focus-visible { box-shadow: 0 0 0 4px rgba(228,255,117,.16), 0 9px 28px rgba(0,0,0,.22); }
+.button:active { transform: scale(.98); box-shadow: none; }
 .button:disabled { cursor: not-allowed; opacity: .4; transform: none; box-shadow: none; }
 
 .category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
@@ -226,6 +228,7 @@ h3 { font-size: 1.18rem; }
 .category-option label::before { content: ""; position: absolute; width: 60px; height: 60px; right: -27px; bottom: -31px; border-radius: 50%; background: var(--purple); opacity: .12; transition: transform .25s ease; }
 .category-option label::after { content: ""; width: 18px; height: 18px; margin-left: auto; border: 2px solid #747896; border-radius: 6px; }
 .category-option label:hover { border-color: rgba(189,131,255,.45); background: rgba(157,85,255,.08); transform: translateY(-2px); }
+.category-option label:active { transform: scale(.985); }
 .category-option label:hover::before { transform: scale(1.45); }
 .category-option input:checked + label { border: 1px solid var(--lime); background: linear-gradient(135deg, rgba(202,255,61,.15), rgba(157,85,255,.1)); color: #fff; box-shadow: inset 0 0 0 1px rgba(202,255,61,.18), 0 9px 22px rgba(0,0,0,.18); }
 .category-option input:checked + label::after { border-color: var(--lime); background: var(--lime); box-shadow: inset 0 0 0 4px #181c34; }
@@ -248,8 +251,10 @@ h3 { font-size: 1.18rem; }
 .timer-options select { min-height: 47px; padding: 9px 38px 9px 13px; border: 1px solid var(--line); border-radius: 11px; background: #0b0e20; color: var(--text); }
 
 .form-actions { display: grid; gap: 13px; padding-top: 10px; }
-.text-button { min-height: 44px; border: 0; background: transparent; color: var(--muted); text-decoration: underline; text-decoration-color: #626680; text-underline-offset: 4px; }
+.text-button { min-height: 44px; padding-inline: 10px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); text-decoration: underline; text-decoration-color: #626680; text-underline-offset: 4px; transition: color .18s ease, background .18s ease, transform .18s ease; }
 .text-button:hover { color: var(--text); }
+.text-button:active { background: rgba(255,255,255,.08); transform: scale(.98); }
+.settings-status { min-height: 24px; margin: 10px 0 0; color: var(--lime); font: 750 .84rem/1.45 ui-sans-serif, system-ui, sans-serif; text-align: center; }
 .privacy-note { margin: 19px 0 0; color: #888da9; font: .81rem/1.5 ui-sans-serif, system-ui, sans-serif; text-align: center; }
 .privacy-note span { color: var(--lime); }
 
@@ -261,6 +266,15 @@ h3 { font-size: 1.18rem; }
 .status-panel p { max-width: 620px; margin-inline: auto; color: var(--muted); font-family: ui-sans-serif, system-ui, sans-serif; }
 .phase-note { padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.04); font-size: .87rem; }
 .noscript-note { padding: 13px; border-radius: 10px; background: rgba(255,117,133,.1); color: #ffc1c8; }
+
+.game-shell > :is(#setup-form, .status-panel, .role-flow-panel):not([hidden]) {
+  animation: screen-enter .28s cubic-bezier(.2,.75,.25,1) both;
+}
+
+@keyframes screen-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .role-flow-panel {
   width: min(100%, 620px);
@@ -441,6 +455,7 @@ h3 { font-size: 1.18rem; }
   transition: border-color .18s ease, background .18s ease, transform .18s ease;
 }
 .vote-option:hover, .vote-option:focus-visible { border-color: var(--lime); background: rgba(202,255,61,.09); transform: translateY(-2px); }
+.vote-option:active { background: rgba(202,255,61,.18); transform: scale(.98); }
 .vote-confirmation { width: min(100%, 430px); margin: 24px auto 0; padding: 22px; border: 1px solid rgba(202,255,61,.42); border-radius: 18px; background: rgba(202,255,61,.08); }
 .vote-confirmation p { margin: 0 0 18px; color: var(--text); font: 800 1.1rem/1.45 ui-sans-serif, system-ui, sans-serif; }
 .vote-confirmation p strong { color: var(--lime); overflow-wrap: anywhere; }
@@ -463,6 +478,11 @@ h3 { font-size: 1.18rem; }
 .vote-totals li strong { flex: none; color: var(--lime); font-size: .86rem; }
 .result-actions { display: grid; width: min(100%, 430px); margin-inline: auto; gap: 10px; }
 .result-actions .button { width: 100%; }
+.result-actions .button:focus-visible, .result-actions .text-button:focus-visible { outline-offset: 2px; }
+#play-again:active { background: #b9ed31; }
+#new-setup:active { background: rgba(157,85,255,.28); }
+#restart-round:hover, #restart-round:focus-visible { background: rgba(255,117,133,.1); color: #ff9ca8; text-decoration-color: currentColor; }
+#restart-round:active { background: rgba(255,117,133,.18); }
 .confirmation-dialog { width: min(calc(100% - 32px), 470px); padding: 0; border: 1px solid rgba(189,131,255,.4); border-radius: 20px; background: var(--panel-solid); color: var(--text); box-shadow: 0 30px 80px rgba(0,0,0,.55); }
 .confirmation-dialog::backdrop { background: rgba(5,7,18,.78); backdrop-filter: blur(4px); }
 .confirmation-dialog form { padding: 26px; text-align: center; }
@@ -575,6 +595,13 @@ footer p { margin: 0; text-align: right; }
   .role-card-cover, .role-card-content { padding: 20px 14px; }
 }
 
+@media (max-width: 340px) {
+  .site-header { flex-wrap: wrap; padding-bottom: 10px; }
+  .site-header nav { width: 100%; gap: 6px; }
+  .site-header nav a { flex: 1 1 0; justify-content: center; border: 1px solid var(--line); border-radius: 10px; }
+  .site-header nav a::after { right: 12px; bottom: 5px; left: 12px; }
+}
+
 @media (max-width: 280px) {
   .site-header { flex-wrap: wrap; }
   nav { width: 100%; justify-content: space-between; }
@@ -584,6 +611,7 @@ footer p { margin: 0; text-align: right; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .game-shell > :is(#setup-form, .status-panel, .role-flow-panel):not([hidden]) { animation: none; }
 }
 
 @media (forced-colors: active) {

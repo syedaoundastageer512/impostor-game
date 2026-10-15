@@ -50,6 +50,7 @@ const elements = {
   timerOptions: document.querySelector("#timer-options"),
   timerDuration: document.querySelector("#timer-duration"),
   clearSettings: document.querySelector("#clear-settings"),
+  settingsStatus: document.querySelector("#settings-status"),
   errorSummary: document.querySelector("#form-error-summary"),
   errorSummaryList: document.querySelector("#error-summary-list"),
   gameAnnouncer: document.querySelector("#game-announcer"),
@@ -696,6 +697,7 @@ elements.clearSettings.addEventListener("click", () => {
   renderPlayers();
   renderCategories();
   renderTimer();
+  elements.settingsStatus.textContent = "Saved settings cleared. Default settings restored.";
   elements.playerList.querySelector("input")?.focus();
 });
 
