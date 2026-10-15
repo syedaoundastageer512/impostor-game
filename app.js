@@ -830,7 +830,10 @@ elements.tapReveal.addEventListener("click", () => {
 elements.hideRole.addEventListener("click", hideRole);
 
 elements.passPhone.addEventListener("click", () => {
-  if (!round?.viewed || !elements.roleCardContent.hidden) return;
+  if (appState !== APP_STATES.REVEAL || !round?.viewed || !elements.roleCardContent.hidden) return;
+  appState = APP_STATES.HANDOFF;
+  round.viewed = false;
+  elements.passPhone.disabled = true;
   if (round.playerIndex >= settings.players.length - 1) {
     showDiscussion();
     return;
