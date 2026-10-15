@@ -36,7 +36,8 @@ const defaultSettings = Object.freeze({
   players: ["Player 1", "Player 2", "Player 3"],
   categories: ["everyday"],
   timerEnabled: false,
-  timerDuration: 3
+  timerDuration: 3,
+  soundEnabled: false
 });
 
 const elements = {
@@ -110,7 +111,20 @@ const elements = {
   newSetup: document.querySelector("#new-setup"),
   restartRound: document.querySelector("#restart-round"),
   restartDialog: document.querySelector("#restart-dialog"),
-  confirmRestart: document.querySelector("#confirm-restart")
+  confirmRestart: document.querySelector("#confirm-restart"),
+  menuTrigger: document.querySelector("#menu-trigger"),
+  menuPanel: document.querySelector("#header-menu-panel"),
+  menuSettings: document.querySelector("#menu-settings"),
+  menuHowToPlay: document.querySelector("#menu-how-to-play"),
+  menuSound: document.querySelector("#menu-sound"),
+  menuRestart: document.querySelector("#menu-restart"),
+  settingsDialog: document.querySelector("#settings-dialog"),
+  menuSettingsForm: document.querySelector("#menu-settings-form"),
+  menuTimerEnabled: document.querySelector("#menu-timer-enabled"),
+  menuTimerOptions: document.querySelector("#menu-timer-options"),
+  menuTimerDuration: document.querySelector("#menu-timer-duration"),
+  menuSoundEnabled: document.querySelector("#menu-sound-enabled"),
+  saveMenuSettings: document.querySelector("#save-menu-settings")
 };
 
 let settings = loadSettings();
@@ -120,6 +134,8 @@ let holdActive = false;
 let timerInterval = null;
 let timerEndTime = null;
 let timerRemainingMs = 0;
+let audioContext = null;
+let restartReturnFocus = null;
 
 function safeStorageRead(key, storage = localStorage) {
   try { return storage.getItem(key); } catch { return null; }
@@ -157,7 +173,9 @@ function loadSettings() {
   if (!raw) return structuredClone(defaultSettings);
   try {
     const parsed = JSON.parse(raw);
-    return isValidStoredSettings(parsed) ? parsed : structuredClone(defaultSettings);
+    return isValidStoredSettings(parsed)
+      ? { ...parsed, soundEnabled: parsed.soundEnabled === true }
+      : structuredClone(defaultSettings);
   } catch {
     return structuredClone(defaultSettings);
   }
@@ -165,6 +183,47 @@ function loadSettings() {
 
 function saveSettings() {
   safeStorageWrite(STORAGE_KEY, JSON.stringify(settings));
+}
+
+function updateMenuState() {
+  elements.menuSound.textContent = settings.soundEnabled ? "Sound On" : "Sound Off";
+  elements.menuSound.setAttribute("aria-pressed", String(settings.soundEnabled));
+  elements.menuRestart.disabled = appState === APP_STATES.SETUP;
+}
+
+function closeMenu({ returnFocus = false } = {}) {
+  if (elements.menuPanel.hidden) return;
+  elements.menuPanel.hidden = true;
+  elements.menuTrigger.setAttribute("aria-expanded", "false");
+  if (returnFocus) elements.menuTrigger.focus();
+}
+
+function openMenu() {
+  elements.menuPanel.hidden = false;
+  elements.menuTrigger.setAttribute("aria-expanded", "true");
+  updateMenuState();
+}
+
+function playSound(kind = "soft") {
+  if (!settings.soundEnabled) return;
+  const AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext;
+  if (!AudioContext) return;
+  try {
+    audioContext ||= new AudioContext();
+    if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const now = audioContext.currentTime;
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(kind === "complete" ? 660 : kind === "alert" ? 330 : 440, now);
+    if (kind === "complete") oscillator.frequency.exponentialRampToValueAtTime(880, now + .12);
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(.07, now + .015);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .18);
+    oscillator.connect(gain).connect(audioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + .2);
+  } catch { /* Audio is optional and may be blocked by the browser. */ }
 }
 
 function makePlayerRow(name, index) {
@@ -387,6 +446,7 @@ function createRound(previousRound = null) {
 function startRound(previousRound = null) {
   createRound(previousRound);
   safeStorageWrite(ROUND_MARKER_KEY, "role-reveal", sessionStorage);
+  playSound("soft");
   showHandoff();
 }
 
@@ -500,6 +560,7 @@ function updateTimer() {
   elements.timerResume.hidden = true;
   elements.timerStatus.textContent = "Time’s up! Finish your thought, then start voting when everyone is ready.";
   elements.discussionTimer.classList.add("is-finished");
+  playSound("alert");
 }
 
 function showDiscussion() {
@@ -628,7 +689,16 @@ function showResults() {
   elements.resultVoteTotals.replaceChildren(...settings.players.map((name, index) => makeVoteTotal(name, totals[index], index === round.imposterIndex)));
   safeStorageRemove(ROUND_MARKER_KEY, sessionStorage);
   elements.resultsPanel.focus();
+  playSound("complete");
   announceGameState(`Round complete. ${crewWins ? "Crew wins" : "Imposter wins"}. Results are displayed.`);
+}
+
+function openRestartDialog() {
+  if (appState === APP_STATES.SETUP || elements.restartDialog.open) return;
+  restartReturnFocus = document.activeElement;
+  closeMenu();
+  elements.restartDialog.showModal();
+  elements.confirmRestart.focus();
 }
 
 function confirmVote() {
@@ -772,16 +842,96 @@ elements.newSetup.addEventListener("click", () => {
 });
 
 elements.restartRound.addEventListener("click", () => {
-  if (appState !== APP_STATES.RESULT || elements.restartDialog.open) return;
-  elements.restartDialog.showModal();
-  elements.confirmRestart.focus();
+  if (appState !== APP_STATES.RESULT) return;
+  openRestartDialog();
 });
 
 elements.confirmRestart.addEventListener("click", event => {
-  if (appState !== APP_STATES.RESULT) return;
+  if (appState === APP_STATES.SETUP) return;
   event.preventDefault();
   elements.restartDialog.close("confirm");
   showSetup();
+});
+
+elements.restartDialog.addEventListener("close", () => {
+  if (elements.restartDialog.returnValue === "confirm") return;
+  const target = restartReturnFocus?.closest?.("[hidden]") ? elements.menuTrigger : restartReturnFocus;
+  target?.focus?.();
+});
+
+elements.menuTrigger.addEventListener("click", () => {
+  if (elements.menuPanel.hidden) openMenu();
+  else closeMenu({ returnFocus: true });
+});
+
+elements.menuTrigger.addEventListener("keydown", event => {
+  if (!elements.menuPanel.hidden || !["ArrowDown", "Enter", " "].includes(event.key)) return;
+  event.preventDefault();
+  openMenu();
+  elements.menuPanel.querySelector('[role="menuitem"]:not(:disabled)')?.focus();
+});
+
+elements.menuPanel.addEventListener("keydown", event => {
+  const items = [...elements.menuPanel.querySelectorAll('[role="menuitem"]:not(:disabled)')];
+  const index = items.indexOf(document.activeElement);
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMenu({ returnFocus: true });
+  } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+    event.preventDefault();
+    const nextIndex = event.key === "Home" ? 0
+      : event.key === "End" ? items.length - 1
+      : event.key === "ArrowDown" ? (index + 1) % items.length
+      : (index - 1 + items.length) % items.length;
+    items[nextIndex]?.focus();
+  }
+});
+
+elements.menuSettings.addEventListener("click", () => {
+  closeMenu();
+  elements.menuTimerEnabled.checked = settings.timerEnabled;
+  elements.menuTimerDuration.value = String(settings.timerDuration);
+  elements.menuTimerOptions.hidden = !settings.timerEnabled;
+  elements.menuSoundEnabled.checked = settings.soundEnabled;
+  elements.settingsDialog.showModal();
+  elements.menuTimerEnabled.focus();
+});
+
+elements.menuHowToPlay.addEventListener("click", () => closeMenu());
+
+elements.menuSound.addEventListener("click", () => {
+  settings.soundEnabled = !settings.soundEnabled;
+  saveSettings();
+  updateMenuState();
+  if (settings.soundEnabled) playSound("soft");
+});
+
+elements.menuRestart.addEventListener("click", openRestartDialog);
+
+elements.menuTimerEnabled.addEventListener("change", () => {
+  elements.menuTimerOptions.hidden = !elements.menuTimerEnabled.checked;
+});
+
+elements.menuSettingsForm.addEventListener("submit", event => {
+  if (event.submitter?.value !== "save") return;
+  settings.timerEnabled = elements.menuTimerEnabled.checked;
+  settings.timerDuration = Number(elements.menuTimerDuration.value);
+  settings.soundEnabled = elements.menuSoundEnabled.checked;
+  saveSettings();
+  renderTimer();
+  updateMenuState();
+  if (settings.soundEnabled) playSound("soft");
+  announceGameState("Settings saved. Timer changes apply next round.");
+});
+
+elements.settingsDialog.addEventListener("close", () => elements.menuTrigger.focus());
+
+document.addEventListener("pointerdown", event => {
+  if (!elements.menuPanel.hidden && !event.target.closest(".header-menu")) closeMenu();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !elements.menuPanel.hidden) closeMenu({ returnFocus: true });
 });
 
 elements.holdReveal.addEventListener("contextmenu", event => event.preventDefault());
@@ -856,6 +1006,7 @@ document.addEventListener("visibilitychange", () => {
 renderPlayers();
 renderCategories();
 renderTimer();
+updateMenuState();
 
 if (!WORDS || categories.some(category => category.id !== "all" && (!Array.isArray(WORDS[category.id]) || WORDS[category.id].length < 25))) {
   throw new Error("The word dataset is missing or incomplete.");

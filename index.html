@@ -44,10 +44,23 @@
         <span class="brand-mark" aria-hidden="true"><span></span></span>
         <span>Imposter Game</span>
       </a>
-      <nav aria-label="Primary navigation">
-        <a href="#how-to-play">How to play</a>
-        <a href="#faq">FAQ</a>
-      </nav>
+      <div class="header-actions">
+        <nav aria-label="Primary navigation">
+          <a href="#how-to-play">How to play</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <div class="header-menu">
+          <button class="menu-trigger" id="menu-trigger" type="button" aria-label="Open game menu" aria-expanded="false" aria-controls="header-menu-panel">
+            <span aria-hidden="true">⋮</span>
+          </button>
+          <div class="menu-panel" id="header-menu-panel" role="menu" hidden>
+            <button type="button" role="menuitem" id="menu-settings">Settings</button>
+            <a href="#how-to-play" role="menuitem" id="menu-how-to-play">How to Play</a>
+            <button type="button" role="menuitem" id="menu-sound" aria-pressed="false">Sound Off</button>
+            <button class="menu-danger" type="button" role="menuitem" id="menu-restart" disabled>Restart Game</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main id="top">
@@ -193,10 +206,47 @@
           <form method="dialog">
             <p class="eyebrow">Restart game</p>
             <h2 id="restart-dialog-title">Return to setup?</h2>
-            <p id="restart-dialog-description">This will leave the completed round and return to your saved setup.</p>
+            <p id="restart-dialog-description">This will clear the current round and return to your saved setup.</p>
             <div class="dialog-actions">
               <button class="button button-secondary" value="cancel">Cancel</button>
               <button class="button button-primary" id="confirm-restart" value="confirm">Restart</button>
+            </div>
+          </form>
+        </dialog>
+
+        <dialog id="settings-dialog" class="confirmation-dialog settings-dialog" aria-labelledby="settings-dialog-title" aria-describedby="settings-dialog-description">
+          <form method="dialog" id="menu-settings-form">
+            <p class="eyebrow">Game preferences</p>
+            <h2 id="settings-dialog-title">Settings</h2>
+            <p id="settings-dialog-description">Timer changes apply when the next round begins.</p>
+            <div class="dialog-settings">
+              <label class="toggle-row" for="menu-timer-enabled">
+                <span><strong>Discussion timer</strong><small>Use the selected length next round.</small></span>
+                <span class="switch">
+                  <input id="menu-timer-enabled" type="checkbox" role="switch" aria-controls="menu-timer-options">
+                  <span aria-hidden="true"></span>
+                </span>
+              </label>
+              <div class="timer-options" id="menu-timer-options" hidden>
+                <label for="menu-timer-duration">Round length</label>
+                <select id="menu-timer-duration">
+                  <option value="1">1 minute</option>
+                  <option value="2">2 minutes</option>
+                  <option value="3">3 minutes</option>
+                  <option value="5">5 minutes</option>
+                </select>
+              </div>
+              <label class="toggle-row" for="menu-sound-enabled">
+                <span><strong>Game sounds</strong><small>Optional cues for key game events.</small></span>
+                <span class="switch">
+                  <input id="menu-sound-enabled" type="checkbox" role="switch">
+                  <span aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+            <div class="dialog-actions">
+              <button class="button button-secondary" value="cancel">Cancel</button>
+              <button class="button button-primary" id="save-menu-settings" value="save">Save Settings</button>
             </div>
           </form>
         </dialog>
