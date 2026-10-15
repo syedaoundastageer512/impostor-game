@@ -294,6 +294,7 @@ function validateSetup() {
   syncPlayersFromInputs();
   const playerErrors = getPlayerErrors();
   let hasErrors = false;
+  let firstInvalidInput = null;
 
   playerErrors.forEach((message, index) => {
     if (!message) return;
@@ -301,6 +302,7 @@ function validateSetup() {
     const input = document.querySelector(`#player-${index}`);
     const error = document.querySelector(`#player-error-${index}`);
     input.setAttribute("aria-invalid", "true");
+    if (!firstInvalidInput) firstInvalidInput = input;
     error.textContent = message;
     error.hidden = false;
     addSummaryLink(`Player ${index + 1}: ${message}`, input.id);
@@ -311,12 +313,13 @@ function validateSetup() {
     elements.categoryError.textContent = "Choose at least one category.";
     elements.categoryError.hidden = false;
     elements.categoryList.querySelectorAll("input").forEach(input => input.setAttribute("aria-invalid", "true"));
+    if (!firstInvalidInput) firstInvalidInput = document.querySelector("#category-all");
     addSummaryLink("Choose at least one category.", "category-all");
   }
 
   if (hasErrors) {
     elements.errorSummary.hidden = false;
-    elements.errorSummary.focus();
+    firstInvalidInput.focus();
     return false;
   }
 
